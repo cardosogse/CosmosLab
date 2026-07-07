@@ -21,10 +21,10 @@ def mostrar_modulo2():
         
         st.components.v1.html(generar_svg_tira_afloja(el1['fuerza'], el1['color'], el1['sym'], el2['fuerza'], el2['color'], el2['sym']), height=130, scrolling=False)
         
-        if diff_m2 == 0: st.markdown(f"<div class='card-success'><b>🤝 Enlace Covalente No Polar Puro (Diferencia de Electronegatividad = 0.0)</b></div>", unsafe_allow_html=True)
-        elif diff_m2 <= 0.4: st.markdown(f"<div class='card-success'><b>🤝 Enlace Covalente No Polar (Diferencia de Electronegatividad = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
-        elif diff_m2 <= 1.7: st.markdown(f"<div class='card-hint'><b>⚡ Enlace Covalente Polar (Diferencia de Electronegatividad = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
-        else: st.markdown(f"<div class='card-error'><b>⚠️ Carácter Altamente Iónico / Tensión (Diferencia de Electronegatividad = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
+        if diff_m2 == 0: st.markdown(f"<div class='card-success'><b>🤝 Enlace Covalente No Polar Puro (Diferencia = 0.0)</b></div>", unsafe_allow_html=True)
+        elif diff_m2 <= 0.4: st.markdown(f"<div class='card-success'><b>🤝 Enlace Covalente No Polar (Diferencia = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
+        elif diff_m2 <= 1.7: st.markdown(f"<div class='card-hint'><b>⚡ Enlace Covalente Polar (Diferencia = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
+        else: st.markdown(f"<div class='card-error'><b>⚠️ Carácter Altamente Iónico / Tensión (Diferencia = {diff_m2:.2f})</b></div>", unsafe_allow_html=True)
 
     elif "Estación B" in estacion_m2:
         st.markdown("### Laboratorio Biofísico: Equilibrio de Nernst en Células Veterinarias")
@@ -39,4 +39,14 @@ def mostrar_modulo2():
         
         potencial_equilibrio = 61.5 * math.log10(c_ext / c_int)
         st.markdown(f"<div class='monitor-box' style='border:1px solid #00e5ff;'><span style='color:#00e5ff; font-size:13px;'>POTENCIAL DE EQUILIBRIO CALCULADO</span><br><b style='font-size:24px; color:#ffffff;'>{potencial_equilibrio:.2f} mV</b></div>", unsafe_allow_html=True)
-
+        
+        if ion_sel == "Potasio (K+)":
+            if c_ext > 7.5 or c_ext < 2.5:
+                st.markdown("<div class='card-error'>🚨 <b>DESEQUILIBRIO DESESTABILIZANTE:</b> Riesgo de arritmias fatales. <b>-1 Vida.</b></div>", unsafe_allow_html=True)
+                st.session_state.vidas -= 1
+            else: st.success("✅ Rango fisiológico seguro.")
+        else:
+            if c_ext > 155.0 or c_ext < 130.0:
+                st.markdown("<div class='card-error'>🚨 <b>DESEQUILIBRIO OSMÓTICO Na+:</b> Edema o deshidratación neuronal. <b>-1 Vida.</b></div>", unsafe_allow_html=True)
+                st.session_state.vidas -= 1
+            else: st.success("✅ Homeostasis óptima.")
