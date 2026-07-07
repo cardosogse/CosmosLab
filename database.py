@@ -18,8 +18,12 @@ def inicializar_db():
     conn.commit()
     conn.close()
 
+# ========================================================
+# CONSOLA DE ADMINISTRACIÓN DE TOKENS (SISTEMA MAESTRO)
+# ========================================================
+
 def generar_token(dias=30):
-    """Genera un identificador único alfanumérico para el control de acceso."""
+    """Genera un identificador alfanumérico único para un nuevo alumno."""
     nuevo_token = str(uuid.uuid4()).split('-')[0].upper()
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -28,8 +32,37 @@ def generar_token(dias=30):
     conn.close()
     return nuevo_token
 
+def listar_todos_los_tokens():
+    """Recupera la totalidad de los registros de la base de datos para el panel de control."""
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT token, en_uso, dias_restantes, puntos, vidas, dia_completado FROM tokens_acceso")
+    filas = c.fetchall()
+    conn.close()
+    return filas
+
+def revocar_eliminar_token(token):
+    """Elimina permanentemente un token de la base de datos."""
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("DELETE FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
+    conn.commit()
+    conn.close()
+
+def forzar_liberacion_sesion(token):
+    """Resetea el estado de uso de un token si la sesión se quedó colgada en el servidor."""
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE tokens_acceso SET en_uso = 0 WHERE token = ?", (token.strip().upper(),))
+    conn.commit()
+    conn.close()
+
+# ========================================================
+# AUTENTICACIÓN Y FLUJO DEL ESTUDIANTE
+# ========================================================
+
 def validar_token(token):
-    """Valida la existencia del token y previene la clonación simultánea de sesiones."""
+    """Valida el token y bloquea accesos simultáneos en múltiples dispositivos."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT en_uso FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
@@ -47,7 +80,7 @@ def validar_token(token):
     return False, "Token inválido o inexistente"
 
 def liberar_token(token):
-    """Libera el token al cerrar la sesión de forma segura."""
+    """Libera el token al cerrar la sesión de forma voluntaria."""
     if token:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
@@ -56,7 +89,7 @@ def liberar_token(token):
         conn.close()
 
 def obtener_datos_usuario(token):
-    """Recupera los contadores de progreso, puntos y salud celular del estudiante."""
+    """Recupera el estado exacto de puntos, vidas y avance diario del alumno."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT puntos, vidas, dia_completado FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
@@ -64,8 +97,12 @@ def obtener_datos_usuario(token):
     conn.close()
     return row if row else (0, 3, 0)
 
+# ========================================================
+# MOTOR DE PERSISTENCIA JUEGO / APRENDIZAJE
+# ========================================================
+
 def sincronizar_progreso_db(token, puntos_ganados, dia_completado):
-    """Guarda los puntos acumulados y actualiza el nivel máximo aprobado en la bitácora."""
+    """Guarda los puntos obtenidos y actualiza la bitácora de viaje."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("""
@@ -78,7 +115,7 @@ def sincronizar_progreso_db(token, puntos_ganados, dia_completado):
     conn.close()
 
 def descontar_vida_db(token):
-    """Resta un punto de estabilidad celular. No permite valores negativos."""
+    """Resta un punto de estabilidad celular al disco duro sin bajar de 0."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("UPDATE tokens_acceso SET vidas = MAX(0, vidas - 1) WHERE token = ?", (token.strip().upper(),))
@@ -86,7 +123,7 @@ def descontar_vida_db(token):
     conn.close()
 
 def restaurar_vida_db(token):
-    """Devuelve un punto de estabilidad celular al superar retos de rescate clínico (Máximo 3)."""
+    """Suma un punto de estabilidad celular tras superar retos de rescate (Máximo 3)."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("UPDATE tokens_acceso SET vidas = MIN(3, vidas + 1) WHERE token = ?", (token.strip().upper(),))
