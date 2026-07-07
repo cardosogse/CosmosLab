@@ -40,13 +40,13 @@ def mostrar_modulo1():
             if "Dalton" in modelo:
                 st.markdown("<div class='card-dalton'><b style='color:#90a4ae; font-size: 1.2rem;'>Modelo de Dalton (1810) — Átomo Indivisible</b><br><br>• <b>Principio:</b> Esfera sólida sin cargas.<br>• <b>Límite:</b> Incapaz de explicar uniones químicas al carecer de electrones.</div>", unsafe_allow_html=True)
             elif "Thomson" in modelo:
-                st.markdown("<div class='card-thomson'><b style='color:#9c27b0; font-size: 1.2rem;'>Modelo de Thomson (1897) — El Electrón</b><br><br>• <b>Principio:</b> Descubre el electrón. Masa positiva con cargas negativas incrustadas.<br>• <b>Aporte:</b> Introduce la naturaleza eléctrica de la materia.</div>", unsafe_allow_html=True)
+                st.markdown("<div class='card-thomson'><b style='color:#9c27b0; font-size: 1.2rem;'>Modelo de Thomson (1897) — El Electrón</b><br><br>• <b>Principio:</b> Masa positiva con cargas negativas incrustadas.<br>• <b>Aporte:</b> Introduce la naturaleza eléctrica de la materia.</div>", unsafe_allow_html=True)
             elif "Rutherford" in modelo:
                 st.markdown("<div class='card-rutherford'><b style='color:#2196f3; font-size: 1.2rem;'>Modelo de Rutherford (1911) — El Espacio Vacío</b><br><br>• <b>Principio:</b> Núcleo denso positivo y espacio vacío periférico.<br>• <b>Aporte:</b> Electrones libres en la corteza listos para interactuar.</div>", unsafe_allow_html=True)
             elif "Bohr" in modelo:
                 st.markdown("<div class='card-bohr'><b style='color:#ffb142; font-size: 1.2rem;'>Modelo de Bohr (1913) — Órbitas Cuantizadas</b><br><br>• <b>Principio:</b> Niveles fijos de energía.<br>• <b>Límite:</b> Su rigidez 2D no explica la geometría tridimensional orgánica.</div>", unsafe_allow_html=True)
             else:
-                st.markdown("<div class='card-schrodinger'><b style='color:#00e5ff; font-size: 1.2rem;'>Modelo de Schrödinger (1926) — Orbitales Cuánticos</b><br><br>• <b>Principio:</b> Densidades probabilísticas 3D. Justifica los ángulos de enlace exactos en biomoléculas.</div>", unsafe_allow_html=True)
+                st.markdown("<div class='card-schrodinger'><b style='color:#00e5ff; font-size: 1.2rem;'>Modelo de Schrödinger (1926) — Orbitales Cuánticos</b><br><br>• <b>Principio:</b> Densidades probabilísticas 3D. Justifica los ángulos de enlace exactos (como el agua en 'V').</div>", unsafe_allow_html=True)
         
         with col_svg:
             st.components.v1.html(f"<div style='display:flex; justify-content:center; align-items:center; width:100%; height:110px; background-color:rgba(255,255,255,0.02); border-radius:8px;'>{obtener_svg_atomo(modelo)}</div>", height=120, scrolling=False)
@@ -104,8 +104,6 @@ def mostrar_modulo1():
 
         st.write("---")
         st.markdown("### ⚛️ 2. Estructura de un Átomo y Propiedades Periódicas")
-        st.markdown("El átomo es la unidad fundamental de la materia. Para comprender la bioquímica celular y el equilibrio osmótico, debemos entender cómo interactúan sus partículas subatómicas.")
-
         col1_at, col2_at = st.columns([1, 1])
         with col1_at:
             protones = st.slider("Protones (Número Atómico Z)", min_value=1, max_value=20, value=6, step=1)
@@ -128,8 +126,8 @@ def mostrar_modulo1():
             st.markdown(f"""
             <div style="background-color: #1e293b; padding: 22px; border-radius: 12px; border-left: 5px solid #3b82f6; color: #f8fafc; margin-bottom: 15px;">
                 <h4 style="margin-top: 0; color: #60a5fa;">📊 Estado del Átomo: {elem['nombre']} (<sup>{masa_atomica}</sup><sub>{protones}</sub>{elem['simbolo']})</h4>
-                <p style="margin: 6px 0;"><b>Número Atómico (Z):</b> {protones} (Protones en el núcleo)</p>
-                <p style="margin: 6px 0;"><b>Masa Atómica (A):</b> {masa_atomica} u.m.a. (Protones + Neutrones)</p>
+                <p style="margin: 6px 0;"><b>Número Atómico (Z):</b> {protones}</p>
+                <p style="margin: 6px 0;"><b>Masa Atómica (A):</b> {masa_atomica} u.m.a.</p>
                 <p style="margin: 6px 0;"><b>Carga Eléctrica Neta:</b> {f"+{carga_neta}" if carga_neta > 0 else carga_neta}</p>
             </div>
             """, unsafe_allow_html=True)
@@ -139,7 +137,6 @@ def mostrar_modulo1():
 
         st.write("---")
         st.markdown("### 🧬 3. Enlaces Químicos e Interacciones Moleculares")
-        
         electronegatividades_m1 = {"Hidrógeno (H)": 2.20, "Carbono (C)": 2.55, "Nitrógeno (N)": 3.04, "Oxígeno (O)": 3.44, "Sodio (Na)": 0.93, "Cloro (Cl)": 3.16, "Calcio (Ca)": 1.00}
         col_fusion1, col_fusion2 = st.columns(2)
         with col_fusion1: atomo_a_m1 = st.selectbox("Átomo A:", list(electronegatividades_m1.keys()), index=1)
@@ -147,16 +144,15 @@ def mostrar_modulo1():
 
         if st.button("🧬 Iniciar Fusión Atómica", use_container_width=True):
             delta_chi = round(abs(electronegatividades_m1[atomo_a_m1] - electronegatividades_m1[atomo_b_m1]), 2)
-            st.markdown(f"<h4 style='text-align: center; color: #10b981;'>Resultado de la Reacción (Diferencia de Electronegatividad = {delta_chi})</h4>", unsafe_allow_html=True)
-            
+            st.markdown(f"<h4 style='text-align: center; color: #10b981;'>Resultado de la Reacción (Diferencia = {delta_chi})</h4>", unsafe_allow_html=True)
             if (atomo_a_m1 == "Hidrógeno (H)" and atomo_b_m1 == "Oxígeno (O)") or (atomo_a_m1 == "Oxígeno (O)" and atomo_b_m1 == "Hidrógeno (H)"):
-                st.markdown("""<div class='card-hint'><h5>🌊 Enlace Covalente Polar + Potencial de Puente de Hidrógeno</h5><p>Se inducen densidades de carga parcial. Forma puentes de hidrógeno, clave en el agua celular.</p></div>""", unsafe_allow_html=True)
+                st.markdown("<div class='card-hint'><h5>🌊 Enlace Covalente Polar + Puente de Hidrógeno</h5><p>Forma puentes de hidrógeno, clave en el agua celular.</p></div>", unsafe_allow_html=True)
             elif delta_chi >= 1.7:
-                st.markdown("""<div class='card-error'><h5>⚡ Enlace No Covalente: Iónico</h5><p>Se generan un catión y un anión estables unidos por atracción electrostática permanente.</p></div>""", unsafe_allow_html=True)
+                st.markdown("<div class='card-error'><h5>⚡ Enlace No Covalente: Iónico</h5><p>Se generan un catión y un anión unidos por atracción electrostática.</p></div>", unsafe_allow_html=True)
             elif 0.4 <= delta_chi < 1.7:
-                st.markdown("""<div style='background-color: #faf5ff; padding: 20px; border-radius: 8px; border: 1px solid #e9d5ff; color: #581c87;'><h5>🧪 Enlace Covalente Polar</h5><p>Los átomos comparten electrones de forma asimétrica, reteniendo carga parcial en los polos moleculares.</p></div>""", unsafe_allow_html=True)
+                st.markdown("<div style='background-color:#faf5ff; padding:20px; border-radius:8px; color:#581c87;'><h5>🧪 Enlace Covalente Polar</h5><p>Los átomos comparten electrones de forma asimétrica.</p></div>", unsafe_allow_html=True)
             else:
-                st.markdown("""<div class='card-success'><h5>💎 Enlace Covalente No Polar (Apolar)</h5><p>Distribución equitativa y simétrica. Alta estabilidad hidrofóbica biológica en membranas.</p></div>""", unsafe_allow_html=True)
+                st.markdown("<div class='card-success'><h5>💎 Enlace Covalente No Polar (Apolar)</h5><p>Distribución simétrica. Alta estabilidad hidrofóbica biológica.</p></div>", unsafe_allow_html=True)
 
     elif "Estación B" in estacion_actual:
         st.markdown("### Fuerzas Intermoleculares y Solubilidad")
@@ -168,11 +164,11 @@ def mostrar_modulo1():
     elif "Estación C" in estacion_actual:
         st.markdown("### Estructura de los Grupos Funcionales")
         grupo = st.selectbox("Grupo Funcional:", ["Carbonilo (C=O)", "Metilo (CH3)", "Hidroxilo (-OH)", "Tiol / Disulfuro (-SH)", "Fosforilo (-PO3)"])
-        st.warning(f"Revisando propiedades bioquímicas del grupo {grupo}.")
+        st.warning(f"Propiedades bioquímicas del grupo {grupo} activas.")
 
     else:
         st.markdown("### pH y Sistemas Amortiguadores")
-        solucion = st.radio("Cámara de Perfusión Sanguínea:", ["Plasma con Bicarbonato (pH 7.4)", "Agua Destilada (pH 7.0)"])
+        solucion = st.radio("Cámara de Perfusión:", ["Plasma con Bicarbonato (pH 7.4)", "Agua Destilada (pH 7.0)"])
         if st.button("Inyectar 10 mL de HCl", use_container_width=True):
             if "Agua" in solucion:
                 if not st.session_state.advertencia_ph:
@@ -184,4 +180,3 @@ def mostrar_modulo1():
                     st.session_state.advertencia_ph = False
             else:
                 st.markdown("<div class='card-success'>🛡️ <b>EFECTO TAMPÓN EXITOSO.</b></div>", unsafe_allow_html=True)
-
