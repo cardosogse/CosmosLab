@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="ChonpsLab Pro | Synapsis", page_icon="⚛️", layout="wide")
 from database import (inicializar_db, validar_y_bloquear_token, obtener_datos_usuario, 
                       liberar_token, registrar_nuevo_usuario, forzar_cancelacion_licencia, eliminar_registro_token)
 from assets import inyectar_css
