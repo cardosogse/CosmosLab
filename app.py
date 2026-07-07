@@ -4,10 +4,25 @@ from database import (inicializar_db, validar_y_bloquear_token, obtener_datos_us
 from assets import inyectar_css
 from modulos.modulo1 import mostrar_modulo1, mezclar_memorama
 from modulos.modulo2 import mostrar_modulo2
-from modulos.modulo3 import mostrar_modulo3
-from modulos.modulo4 import mostrar_modulo4
-from modulos.evaluacion import mostrar_evaluacion
 
+# ========================================================
+# 🛠️ CAJAS VACÍAS TEMPORALES PARA IR MONTANDO POR CAPAS
+# ========================================================
+def mostrar_modulo3_temporal():
+    st.markdown("<h2 style='color:#00e5ff; margin-top:0;'>🧬 Módulo 3: Reactores de Enlace Bioquímico</h2>", unsafe_allow_html=True)
+    st.info("🚧 **Estación en construcción.** Esta pieza de LEGO se activará en la siguiente actualización sin romper el sistema.")
+
+def mostrar_modulo4_temporal():
+    st.markdown("<h2 style='color:#00e5ff; margin-top:0;'>🌡️ Módulo 4: Glucómica e Isomerismo</h2>", unsafe_allow_html=True)
+    st.info("🚧 **Estación en construcción.** Esta pieza de LEGO se activará en la siguiente actualización sin romper el sistema.")
+
+def mostrar_evaluacion_temporal():
+    st.markdown("<h2 style='color:#00e5ff; margin-top:0;'>🏆 Evaluación Final de la Bitácora</h2>", unsafe_allow_html=True)
+    st.info("🚧 **Estación en construcción.** El examen final se habilitará automáticamente al terminar los módulos anteriores.")
+
+# ========================================================
+# GESTIÓN DEL ESTADO GLOBAL
+# ========================================================
 def inicializar_estado():
     if "auth" not in st.session_state: st.session_state["auth"] = False
     if "token_actual" not in st.session_state: st.session_state["token_actual"] = ""
@@ -88,14 +103,18 @@ def main():
 
         with tabs[0]:
             mostrar_modulo1()
+            
         with tabs[1]:
             mostrar_modulo2()
+            
         with tabs[2]:
-            mostrar_modulo3()
+            mostrar_modulo3_temporal()
+            
         with tabs[3]:
-            mostrar_modulo4()
+            mostrar_modulo4_temporal()
+            
         with tabs[4]:
-            mostrar_evaluacion()
+            mostrar_evaluacion_temporal()
 
 if __name__ == "__main__":
     main()
