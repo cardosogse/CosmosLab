@@ -49,5 +49,4 @@ FONDO_FRACTAL_CSS = """
 """
 
 def cargar_estilos():
-    """Inyecta el código CSS en la aplicación de Streamlit."""
     st.markdown(FONDO_FRACTAL_CSS, unsafe_allow_html=True)
