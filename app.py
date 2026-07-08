@@ -2,7 +2,7 @@ import streamlit as st
 import sqlite3
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # ==========================================
 # 0. CONFIGURACIÓN E INICIALIZACIÓN DE LA BD
@@ -29,7 +29,7 @@ def init_db():
 
 init_db()
 
-# Inicialización de estados globales
+# Inicialización estricta de estados de sesión
 if "auth" not in st.session_state: st.session_state["auth"] = False
 if "admin_auth" not in st.session_state: st.session_state["admin_auth"] = False
 if "token_actual" not in st.session_state: st.session_state["token_actual"] = None
@@ -40,7 +40,6 @@ if "estacion" not in st.session_state: st.session_state["estacion"] = "Día 1: I
 if "advertencia_ph" not in st.session_state: st.session_state["advertencia_ph"] = False
 if "errores_quiz" not in st.session_state: st.session_state["errores_quiz"] = 0
 
-# Funciones de soporte para Base de Datos
 def validar_token_db(token):
     conn = sqlite3.connect("mainlab_data.db")
     cursor = conn.cursor()
@@ -64,7 +63,6 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
     
-    /* Fondo del Universo Profundo */
     .stApp {
         background: radial-gradient(circle at center, #0d1117 0%, #07090e 100%);
         font-family: 'Inter', sans-serif;
@@ -77,72 +75,58 @@ st.markdown("""
         50% { text-shadow: 0 0 16px #4facfe, 0 0 25px #00f2fe, 0 0 30px #4facfe; color: #ffffff; }
         100% { text-shadow: 0 0 4px #00f2fe, 0 0 8px #00f2fe; color: #00f2fe; }
     }
-    .brand-main { font-family: 'Orbitron', sans-serif; font-size: 3.2rem; font-weight: 700; color: #ffffff; text-align: center; margin-bottom: 0px; }
+    .brand-main { font-family: 'Orbitron', sans-serif; font-size: 3rem; font-weight: 700; color: #ffffff; text-align: center; margin-bottom: 0px; }
     .brand-lab { animation: pulso-radiactivo 3s infinite ease-in-out; }
     
-    /* Título de sección Armonizado y Simétrico */
-    .sub-title { font-size: 1.15rem; color: #8b949e; text-align: center; margin-top: 5px; margin-bottom: 30px; font-weight: 300; }
-    .section-header-custom { font-family: 'Orbitron', sans-serif; font-size: 1.25rem; color: #ffffff; font-weight: 600; margin-bottom: 15px; }
+    .sub-title { font-size: 1.1rem; color: #8b949e; text-align: center; margin-top: 5px; margin-bottom: 25px; font-weight: 300; }
+    .section-header-custom { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; color: #ffffff; font-weight: 600; margin-bottom: 15px; }
     
-    /* Paneles de Neón Traslúcidos (Glassmorphism) */
     .lab-panel {
         background: rgba(22, 27, 34, 0.4);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(0, 242, 254, 0.15);
         border-radius: 12px;
-        padding: 25px;
+        padding: 22px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
     
-    /* Contenedores para Tarjetas de KPIs individuales */
-    .kpi-card {
+    /* KPIs Redimensionados y Armónicos (No gigantes) */
+    .kpi-card-mini {
         background: rgba(13, 17, 23, 0.6);
-        border-radius: 10px;
-        padding: 15px;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 12px;
         text-align: center;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
     }
+    .kpi-val { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: bold; margin: 5px 0; }
     
-    /* Alertas Clínicas Especializadas */
-    .card-success { background: rgba(46, 204, 113, 0.1); border-left: 5px solid #2ecc71; padding: 12px; border-radius: 4px; color: #2ecc71; margin: 10px 0; }
-    .card-warning { background: rgba(241, 196, 15, 0.1); border-left: 5px solid #f1c40f; padding: 12px; border-radius: 4px; color: #f1c40f; margin: 10px 0; }
-    .card-error { background: rgba(231, 76, 60, 0.1); border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #e74c3c; margin: 10px 0; }
-    .card-hint { background: rgba(52, 152, 219, 0.1); border-left: 5px solid #3498db; padding: 12px; border-radius: 4px; color: #3498db; margin: 10px 0; }
+    .card-success { background: rgba(46, 204, 113, 0.1); border-left: 5px solid #2ecc71; padding: 12px; border-radius: 4px; color: #2ecc71; }
+    .card-error { background: rgba(231, 76, 60, 0.1); border-left: 5px solid #e74c3c; padding: 12px; border-radius: 4px; color: #e74c3c; }
+    .card-hint { background: rgba(52, 152, 219, 0.1); border-left: 5px solid #3498db; padding: 12px; border-radius: 4px; color: #3498db; }
 </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. ENCABEZADO UNIFICADO DE LA PLATAFORMA
-# ==========================================
+# Encabezado Principal de la Marca
 st.markdown("<h1 class='brand-main'>Main<span class='brand-lab'>Lab</span></h1>", unsafe_allow_html=True)
 st.markdown("<p class='sub-title'>Bioquímica aplicada. Ciencia interactiva. Sin límites.</p>", unsafe_allow_html=True)
 
-# Interceptor de fallos estructurales para fases de compilación modular
 def interceptor_infraestructura():
-    st.markdown("""
-    <div style='background: rgba(139,0,0,0.15); border: 1px solid #ff4d4d; border-radius:8px; padding:15px; margin-bottom:20px;'>
-        <span style='color:#ff4d4d; font-weight:bold;'>🚨 MONITOR DE CONTROL: ERROR DE COMPILACIÓN DETECTADO EN LOS MÓDULOS</span><br>
-        <small style='color:#aaa;'>Interceptor de Infraestructura Activo</small>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<div class='card-error'><b>🚨 MONITOR DE INFRAESTRUCTURA: ANOMALÍA DETECTADA EN LA LÓGICA</b></div>", unsafe_allow_html=True)
 
 # ==========================================
-# 3. COMPORTAMIENTO LÓGICO DE AUTENTICACIÓN
+# 2. SISTEMA DE AUTENTICACIÓN OCULTO
 # ==========================================
-
-# Caso A: Nadie ha iniciado sesión (Pantalla limpia de Login)
 if not st.session_state["auth"] and not st.session_state["admin_auth"]:
     st.markdown("<div class='lab-panel'>", unsafe_allow_html=True)
     st.markdown("<div class='section-header-custom'>🔒 Acceso a Estaciones de Trabajo</div>", unsafe_allow_html=True)
     
-    input_token = st.text_input("Introduce tu Cupón de Acceso o Código de Validación:", type="password", placeholder="ML-XXXXXX / Código Maestro").strip()
+    input_token = st.text_input("Introduce tu Cupón de Acceso:", type="password", placeholder="ML-XXXXXX / Código Especial").strip()
     
     if st.button("Autenticar e Ingresar", use_container_width=True):
         if input_token == "SYS-ADMIN-99":
             st.session_state["admin_auth"] = True
-            st.success("Consola del Administrador Desbloqueada con Éxito.")
+            st.success("Consola del Administrador Desbloqueada.")
             st.rerun()
         elif input_token:
             datos = validar_token_db(input_token)
@@ -154,77 +138,22 @@ if not st.session_state["auth"] and not st.session_state["admin_auth"]:
                 st.session_state["vidas"] = datos[2]
                 st.session_state["racha"] = datos[3]
                 actualizar_conexion_db(input_token)
-                st.success("Acceso estudiantil autorizado.")
                 st.rerun()
             else:
-                st.error("Cupón inválido, expirado o inexistente en SQLite.")
+                st.error("Cupón inválido o inexistente.")
         else:
-            st.warning("Por favor, digita un código válido.")
+            st.warning("Escribe un código.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Caso B: Consola de Administración Activa (Con opción de Sesión Dual Integrada)
+# ==========================================
+# 3. ENTORNO EXCLUSIVO DEL ADMINISTRADOR
+# ==========================================
 elif st.session_state["admin_auth"]:
     st.markdown("<div class='lab-panel' style='border-color: #ff00ff;'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header-custom'>📊 Tablero General de KPIs de Rendimiento</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header-custom'>🔑 Consola de Administración y Control de Cupones</div>", unsafe_allow_html=True)
     
-    # Consulta analítica macro en SQLite
-    conn = sqlite3.connect("mainlab_data.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*), AVG(puntos), AVG(vidas), SUM(intentos_quiz) FROM cupones")
-    totales = cursor.fetchone()
-    total_tokens = totales[0] if totales[0] else 0
-    prom_puntos = round(totales[1], 1) if totales[1] else 0
-    prom_vidas = round(totales[2], 2) if totales[2] else 0
-    total_quizzes = totales[3] if totales[3] else 0
-    
-    cursor.execute("SELECT COUNT(*) FROM cupones WHERE vidas = 1")
-    criticos_lisis = cursor.fetchone()[0]
-    conn.close()
-    
-    # Render de las Tarjetas KPI con Diseño Esmerilado de Neón
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"""
-        <div class='kpi-card' style='border-top: 4px solid #2ecc71;'>
-            <h4 style='color:#2ecc71; margin:0;'>🏆 Rendimiento Modular</h4>
-            <h2 style='margin:10px 0; font-family:Orbitron;'>{prom_puntos} <span style='font-size:1rem;'>PTS</span></h2>
-            <p style='font-size:0.85rem; color:#aaa; margin:0;'>Media Académica Global</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write("")
-        st.markdown(f"""
-        <div class='kpi-card' style='border-top: 4px solid #3498db;'>
-            <h4 style='color:#3498db; margin:0;'>📅 Evaluaciones Ejecutadas</h4>
-            <h2 style='margin:10px 0; font-family:Orbitron;'>{total_quizzes} <span style='font-size:1rem;'>Tests</span></h2>
-            <p style='font-size:0.85rem; color:#aaa; margin:0;'>Intentos Totales en Quizzes</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col2:
-        color_lisis = "#e74c3c" if criticos_lisis > 0 else "#2ecc71"
-        st.markdown(f"""
-        <div class='kpi-card' style='border-top: 4px solid {color_lisis};'>
-            <h4 style='color:{color_lisis}; margin:0;'>💔 Tasa de Riesgo de Lisis</h4>
-            <h2 style='margin:10px 0; font-family:Orbitron;'>{criticos_lisis} <span style='font-size:1rem;'>Alumnos</span></h2>
-            <p style='font-size:0.85rem; color:#aaa; margin:0;'>Usuarios con Alerta Crítica (1 Vida)</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write("")
-        st.markdown(f"""
-        <div class='kpi-card' style='border-top: 4px solid #f1c40f;'>
-            <h4 style='color:#f1c40f; margin:0;'>🚀 Licencias del Ecosistema</h4>
-            <h2 style='margin:10px 0; font-family:Orbitron;'>{total_tokens} <span style='font-size:1rem;'>Activas</span></h2>
-            <p style='font-size:0.85rem; color:#aaa; margin:0;'>Cupones Totales Distribuidos</p>
-        </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Herramientas de Gestión de Cupones (Nomenclatura ML y MLP Automática)
-    st.markdown("<div class='lab-panel'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header-custom'>🛠️ Inyector y Generador de Licencias</div>", unsafe_allow_html=True)
-    
-    dias_vigencia = st.number_input("Establecer vigencia de la licencia (Días):", min_value=1, max_value=365, value=30)
-    
+    # Inyector de Licencias
+    dias_vigencia = st.number_input("Vigencia de la licencia (Días):", min_value=1, max_value=365, value=30)
     if st.button("Generar e Inyectar Token", use_container_width=True):
         prefix = "MLP-" if dias_vigencia >= 90 else "ML-"
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -236,12 +165,12 @@ elif st.session_state["admin_auth"]:
                        (nuevo_token, datetime.now().strftime("%Y-%m-%d"), dias_vigencia))
         conn.commit()
         conn.close()
-        st.success(f"Licencia inyectada con éxito: **{nuevo_token}** ({dias_vigencia} Días de duración)")
+        st.success(f"Licencia inyectada: **{nuevo_token}** ({dias_vigencia} Días)")
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Monitor Detallado por Token en Tiempo Real
+
+    # Monitor Detallado de Tokens (Abajo del generador)
     st.markdown("<div class='lab-panel'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header-custom'>📋 Monitor Detallado por Token (Tiempo Real)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header-custom'>📋 Monitor de Cupones Activos</div>", unsafe_allow_html=True)
     
     conn = sqlite3.connect("mainlab_data.db")
     cursor = conn.cursor()
@@ -252,76 +181,64 @@ elif st.session_state["admin_auth"]:
     if filas:
         for f in filas:
             icono_vida = "💚 3/3" if f[3] == 3 else ("⚠️ 2/3" if f[3] == 2 else "🚨 1/3")
-            st.write(f"**ID:** `{f[0]}` | **Fase:** {f[1]} | **Puntos:** {f[2]} | **Vidas:** {icono_vida} | **Racha:** {f[4]} | **Conexión:** {f[5]}")
+            st.write(f"**Cupón:** `{f[0]}` | **Estación:** {f[1]} | **Puntos:** {f[2]} | **Vidas:** {icono_vida} | **Conexión:** {f[5]}")
     else:
-        st.info("No hay cupones registrados en la base de datos.")
+        st.info("No hay cupones registrados.")
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Panel de Auditoría Dual Interna (Modo Espejo)
+
+    # SECCIÓN INFERIOR: KPIs Globales Redimensionados y Armónicos
     st.markdown("<div class='lab-panel' style='border-color: #3498db;'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header-custom'>🔬 Auditoría de Calidad (Sesión Dual)</div>", unsafe_allow_html=True)
-    st.write("Inspecciona el comportamiento y experiencia de un cupón sin perder tus credenciales de administrador.")
+    st.markdown("<div class='section-header-custom'>📊 Métricas Macro del Ecosistema</div>", unsafe_allow_html=True)
     
-    token_auditoria = st.text_input("Ingresa un Token Activo para simular:", key="auditar_token_input")
-    if st.button("Montar Simulación de Usuario", use_container_width=True):
-        datos_aud = validar_token_db(token_auditoria)
-        if datos_aud:
-            st.session_state["auth"] = True
-            st.session_state["token_actual"] = token_auditoria
-            st.session_state["estacion"] = datos_aud[0] if datos_aud[0] != 'Ninguno' else "Día 1: Introducción"
-            st.session_state["puntos_acumulados"] = datos_aud[1]
-            st.session_state["vidas"] = datos_aud[2]
-            st.session_state["racha"] = datos_aud[3]
-            st.success(f"Espejo enlazado al token `{token_auditoria}`. Baja la página para interactuar.")
-        else:
-            st.error("Token no válido para auditoría.")
+    conn = sqlite3.connect("mainlab_data.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*), AVG(puntos), COUNT(*) FROM cupones WHERE vidas = 1")
+    totales = cursor.fetchone()
+    total_t = totales[0] if totales[0] else 0
+    media_p = round(totales[1], 1) if totales[1] else 0
+    criticos = totales[2] if totales[2] else 0
+    conn.close()
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f"<div class='kpi-card-mini'><small style='color:#2ecc71;'>🏆 Promedio Rendimiento</small><div class='kpi-val' style='color:#2ecc71;'>{media_p} PTS</div></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div class='kpi-card-mini'><small style='color:#e74c3c;'>💔 Riesgos de Lisis</small><div class='kpi-val' style='color:#e74c3c;'>{criticos} Alum.</div></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"<div class='kpi-card-mini'><small style='color:#f1c40f;'>🎫 Total Cupones</small><div class='kpi-val' style='color:#f1c40f;'>{total_t} u.</div></div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("Cerrar Sesión del Administrador", type="primary", use_container_width=True):
+    if st.button("Cerrar Consola del Administrador", type="primary", use_container_width=True):
         st.session_state["admin_auth"] = False
-        st.session_state["auth"] = False
-        st.session_state["token_actual"] = None
         st.rerun()
 
-# Caso C: Interfaz del Estudiante Activa (O Modo Espejo de Calidad)
-if st.session_state["auth"]:
-    # Si estamos en sesión dual, mostramos un banner informativo flotante
-    if st.session_state["admin_auth"]:
-        st.markdown("<div class='card-hint'>⚙️ <b>MODO ESPEJO ACTIVO:</b> Estás visualizando la app como el usuario <code>{}</code>. Los cambios se sincronizan en caliente.</div>".format(st.session_state["token_actual"]), unsafe_allow_html=True)
-        
+# ==========================================
+# 4. ENTORNO NORMAL DEL ESTUDIANTE
+# ==========================================
+if st.session_state["auth"] and not st.session_state["admin_auth"]:
     st.markdown("<div class='lab-panel' style='border-color: #00f2fe;'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='section-header-custom'>🧬 Panel de Trabajo: {st.session_state['token_actual']}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='section-header-custom'>🧬 Panel Estudiantil • Usuario: {st.session_state['token_actual']}</div>", unsafe_allow_html=True)
     
     col_e1, col_e2, col_e3 = st.columns(3)
-    col_e1.metric("Puntos Acumulados", f"{st.session_state['puntos_acumulados']} PTS")
-    col_e2.metric("Sistemas Vitales (Vidas)", f"{st.session_state['vidas']} / 3")
-    col_e3.metric("Racha Cuántica", f"{st.session_state['racha']}x")
+    col_e1.metric("Puntos", f"{st.session_state['puntos_acumulados']} PTS")
+    col_e2.metric("Sistemas Vitales", f"{st.session_state['vidas']} / 3")
+    col_e3.metric("Racha", f"{st.session_state['racha']}x")
     
-    # Cronograma y selector de Estaciones de Trabajo
     estacion_actual = st.selectbox(
-        "Seleccionar Estación de Simulación Autorizada:",
+        "Estación de Trabajo:",
         ["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"],
         index=["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"].index(st.session_state["estacion"]) if st.session_state["estacion"] in ["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"] else 0
     )
     st.markdown("</div>", unsafe_allow_html=True)
     
-    # Funciones de guardado en SQLite del progreso del estudiante
     def sincronizar_progreso_db(token, puntos, intentos_sumar=0):
         conn = sqlite3.connect("mainlab_data.db")
         cursor = conn.cursor()
-        cursor.execute("UPDATE cupones SET modulo_maximo=?, puntos=?, intentos_quiz = intentos_quiz + ? WHERE token=?", 
+        cursor.execute("UPDATE cupones SET modulo_maximo=?, puntos=?, intentos_quiz = intentos_quiz + ? WHERE token?", 
                        (estacion_actual, puntos, intentos_sumar, token))
         conn.commit()
         conn.close()
 
-    def descontar_vida_db(token):
-        conn = sqlite3.connect("mainlab_data.db")
-        cursor = conn.cursor()
-        cursor.execute("UPDATE cupones SET vidas = max(0, vidas - 1) WHERE token=?", (token,))
-        conn.commit()
-        conn.close()
-    
-    # Carga limpia y controlada de módulos dinámicos mediante el interceptor
     try:
         if "Día 1" in estacion_actual:
             st.info("Módulo 1: Conceptos introductorios e instrumental analítico.")
@@ -334,9 +251,9 @@ if st.session_state["auth"]:
             mostrar_dia4()
     except Exception as e:
         interceptor_infraestructura()
-        st.error(f"Detalle técnico de la anomalía: {e}")
+        st.error(f"Detalle: {e}")
         
-    if st.button("Desconectarse del Ecosistema", use_container_width=True):
+    if st.button("Cerrar Sesión del Laboratorio", use_container_width=True):
         st.session_state["auth"] = False
         st.session_state["token_actual"] = None
         st.rerun()
