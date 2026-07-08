@@ -17,7 +17,14 @@ def cargar_estilos():
             background-attachment: fixed;
         }
         .main-title { text-align: center; color: #ffffff; font-size: 3.8rem; font-weight: 800; margin-bottom: 0px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.1); }
-        .main-title-suffix { color: #00e5ff; font-weight: 300; text-shadow: 0 0 10px #00e5ff; }
+        
+        /* 🌌 Efecto de pulsación neón / radiactiva orgánica para el logotipo */
+        @keyframes pulso-neon {
+            0% { text-shadow: 0 0 5px #00e5ff, 0 0 10px #00e5ff; color: #00e5ff; opacity: 0.8; }
+            50% { text-shadow: 0 0 20px #00e5ff, 0 0 30px #00e5ff, 0 0 40px #00e5ff; color: #ffffff; opacity: 1; }
+            100% { text-shadow: 0 0 5px #00e5ff, 0 0 10px #00e5ff; color: #00e5ff; opacity: 0.8; }
+        }
+        .main-title-suffix { font-weight: 300; animation: pulso-neon 2.5s infinite ease-in-out; }
         .sub-title { text-align: center; font-style: italic; color: #90a4ae; font-size: 1.2rem; margin-top: 5px; margin-bottom: 30px; }
         
         /* Paneles Traslúcidos de Alta Tecnología (Glassmorphism Premium) */
@@ -36,7 +43,7 @@ def cargar_estilos():
         .card-hint { background-color: rgba(255, 177, 66, 0.08); border: 1px solid rgba(255, 177, 66, 0.2); border-left: 5px solid #ffb142; padding: 15px; border-radius: 6px; margin-top: 10px; color: #ffda79;}
         .monitor-box { background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;}
         
-        /* Optimización de Botonera Neón de Alta Reactividad (Efecto Hover Premium) */
+        /* Optimización de Botonera Neón de Alta Reactividad */
         .stButton>button {
             background: rgba(0, 229, 255, 0.03) !important;
             color: #00e5ff !important;
@@ -112,7 +119,7 @@ def obtener_svg_atomo(modelo_nombre):
     elif "Bohr" in modelo_nombre:
         return "<svg viewBox='0 0 100 100' width='90' height='90'><circle cx='50' cy='50' r='7' fill='#ffb142'/><circle cx='50' cy='50' r='20' fill='none' stroke='#ffb142' stroke-width='1' stroke-dasharray='2 2'/><circle cx='50' cy='50' r='36' fill='none' stroke='#ffb142' stroke-width='1'/><circle cx='50' cy='14' r='3' fill='#ffffff'/><circle cx='68' cy='38' r='3' fill='#ffffff'/></svg>"
     else:
-        return "<svg viewBox='0 0 100 100' width='90' height='90'><defs><radialGradient id='cloud' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='#00e5ff' stop-opacity='0.8'/><stop offset='50%' stop-color='#00e5ff' stop-opacity='0.25'/><stop offset='100%' stop-color='#00e5ff' stop-opacity='0'/></radialGradient></defs><circle cx='50' cy='50' r='38' fill='url(#cloud)'/><circle cx='50' cy='50' r='4' fill='#ffffff'/></svg>"
+        return "<svg viewBox='0 0 100 100' width='90' height='90'><defs><radialGradient id='cloud' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='#00e5ff' stop-opacity='0.8'/><stop offset='50%' stop-color='#00e5ff' stop-opacity='0.25'/><stop offset='100%' stop-color='#00e5ff' stop-opacity='0'/></radialGradient></defs><circle cx='50' cy='50' r='38' fill='url(#cloud)'/><circle cx='50' cy='4' fill='#ffffff'/></svg>"
 
 ELEMENTOS = {
     "Carbono (C)": {"fuerza": 2.55, "color": "#ffb142", "sym": "C"},
@@ -123,14 +130,12 @@ ELEMENTOS = {
     "Azufre (S)": {"fuerza": 2.58, "color": "#ffda79", "sym": "S"}
 }
 
-@st.cache_data
 def generar_svg_tira_afloja(f1, c1, sym1, f2, c2, sym2):
     diff = abs(f1 - f2)
     cx_e = 120 if f1 == f2 else (80 + (1.0 / diff) * 5 if f1 > f2 else 160 - (1.0 / diff) * 5)
     stroke_color = "#ffffff" if f1 == f2 else (c1 if f1 > f2 else c2)
     return f"<div style='display:flex; justify-content:center; align-items:center; width:100%; height:120px;'><svg viewBox='0 0 240 100' width='100%' height='100%'><line x1='60' y1='50' x2='180' y2='50' stroke='#555' stroke-width='2' stroke-dasharray='4 4'/><circle cx='60' cy='50' r='22' fill='{c1}' opacity='0.85'/><text x='54' y='55' fill='black' font-weight='bold' font-size='14'>{sym1}</text><text x='15' y='92' fill='#cfd8dc' font-size='11'>Val: {f1}</text><circle cx='180' cy='50' r='22' fill='{c2}' opacity='0.85'/><text x='174' y='55' fill='black' font-weight='bold' font-size='14'>{sym2}</text><text x='150' y='92' fill='#cfd8dc' font-size='11'>Val: {f2}</text><ellipse cx='{cx_e}' cy='50' rx='55' ry='28' fill='none' stroke='{stroke_color}' stroke-width='1.8' stroke-dasharray='3 1'/><circle cx='{cx_e}' cy='50' r='6' fill='#00e5ff'/></svg></div>"
 
-@st.cache_data
 def generar_svg_enlace(sym1, f1, c1, sym2, f2, c2):
     diff = abs(f1 - f2)
     if diff == 0: cx_e1, cx_e2, ellipse_x, stroke_color, stroke_dash = 113, 127, 120, "#ffffff", "2 2"
