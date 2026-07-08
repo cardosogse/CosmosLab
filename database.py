@@ -4,7 +4,8 @@ from datetime import timedelta
 import random
 import string
 
-DB_NAME = 'synapsis_auth.db'
+# Cambiamos el nombre para romper el Write-Lock en Streamlit Cloud
+DB_NAME = 'mainlab_pro_auth.db'
 
 def inicializar_db():
     conn = sqlite3.connect(DB_NAME)
@@ -34,7 +35,6 @@ def obtener_datos_usuario(token):
     return res if res else (0, 3, 1)
 
 def obtener_todos_los_tokens():
-    # Devuelve la lista estructurada para el Monitor del Administrador
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT token, en_uso, fecha_expiracion, score_puntos, vidas, modulo_actual FROM tokens_acceso")
@@ -47,7 +47,7 @@ def obtener_todos_los_tokens():
         f_exp = datetime.datetime.strptime(row[2], "%Y-%m-%d").date()
         dias_restantes = max(0, (f_exp - hoy).days)
         datos_procesados.append([row[0], "Sí" if row[1] else "No", dias_restantes, row[3], row[4], row[5]])
-    return datos_processed if datos_procesados else rows
+    return datos_procesados if datos_procesados else rows
 
 def listar_todos_los_tokens():
     return obtener_todos_los_tokens()
