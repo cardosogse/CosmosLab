@@ -57,7 +57,7 @@ def mostrar_dia4():
         elif errores == 0:
             st.balloons()
             st.success("🏆 ¡Felicidades! Récord perfecto. Progreso bloqueado anti-F5 en SQLite.")
-            sincronizar_progreso_db(token, st.session_state["puntos_acumulados"] + 200, 1)
+            sincronizar_progreso_db(token, st.session_state["puntos_acumulados"] + 200, 2)
             st.session_state["puntos_acumulados"] += 200
             st.rerun()
         else:
@@ -66,9 +66,8 @@ def mostrar_dia4():
                 st.markdown(f"<div class='card-hint'>💡 Tienes {errores} error(es). Recuerda que la variación en un único centro quiral define un epímero. Corrige sin penalización.</div>", unsafe_allow_html=True)
             else:
                 descontar_vida_db(token)
-                sincronizar_progreso_db(token, st.session_state["puntos_acumulados"], 1)
                 st.session_state["vidas"] = max(0, st.session_state["vidas"] - 1)
-                st.error("❌ Fallo Clínico. Se ha descontado 1 Vida e impactado en el panel de control.")
+                st.error("❌ Fallo Clínico. Se ha descontado 1 Vida.")
                 st.session_state["errores_quiz"] = 0
                 st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
