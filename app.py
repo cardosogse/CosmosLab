@@ -1,198 +1,161 @@
 import streamlit as st
-import sqlite3
-import random
-import string
-from datetime import datetime, timedelta
+import pandas as pd
 
-# ==========================================
-# 0. CONFIGURACIÓN E INICIALIZACIÓN DE LA BD
-# ==========================================
-def init_db():
-    conn = sqlite3.connect("mainlab_data.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS cupones (
-            token TEXT PRIMARY KEY,
-            modulo_maximo TEXT DEFAULT 'Ninguno',
-            puntos INT DEFAULT 0,
-            vidas INT DEFAULT 3,
-            racha INT DEFAULT 1,
-            ultima_conexion TEXT,
-            vigencia_dias INT DEFAULT 30,
-            fecha_creacion TEXT,
-            estado TEXT DEFAULT 'Activo'
-        )
-    """)
-    conn.commit()
-    conn.close()
+# 🛡️ INTERCEPTOR DE INFRAESTRUCTURA: Rompe el blindaje de censura de Streamlit
+try:
+    from database import (
+        inicializar_db, validar_token, liberar_token, obtener_datos_usuario,
+        generar_token, listar_todos_los_tokens, revocar_eliminar_token, forzar_liberacion_sesion
+    )
+    from assets import cargar_estilos, mezclar_memorama
+    from modulos.m1_dia1 import mostrar_dia1
+    from modulos.m1_dia2 import mostrar_dia2
+    from modulos.m1_dia3 import mostrar_dia3
+    from modulos.m1_dia4 import mostrar_dia4
+    from modulos.modulo2 import mostrar_modulo2
 
-init_db()
+except Exception as e:
+    # Si cualquiera de los módulos hijos tiene un error de sintaxis oculto, se captura y se muestra aquí
+    st.set_page_config(page_title="MainLab - Diagnóstico", layout="wide", page_icon="🚨")
+    st.error("🚨 MONITOR DE CONTROL: ERROR DE COMPILACIÓN DETECTADO EN LOS MÓDULOS")
+    st.markdown("---")
+    st.markdown(f"**Tipo de Fallo detectado:** `{type(e).__name__}`")
+    
+    # Extrae los datos exactos del archivo que está causando el colapso
+    if hasattr(e, 'filename') and e.filename:
+        st.error(f"📁 **Archivo roto real:** `{e.filename}`")
+    if hasattr(e, 'lineno') and e.lineno:
+        st.warning(f"🔢 **Línea exacta del conflicto:** Renglón `{e.lineno}`")
+    if hasattr(e, 'text') and e.text:
+        st.code(f"Código conflictivo: {e.text}", language="python")
+        
+    st.markdown("### 📋 Rastreo completo del Servidor (*Stacktrace*):")
+    st.exception(e)
+    st.stop()
 
-# Inicialización de estados de sesión originales
+# ========================================================
+# APERTURA DEL ENTORNO DE SIMULACIÓN SI NO HAY ERRORES
+# ========================================================
+st.set_page_config(page_title="MainLab", layout="wide", page_icon="🧬")
+cargar_estilos()
+inicializar_db()
+
+st.markdown("<h1 class='main-title'>Main<span class='main-title-suffix'>Lab</span></h1>", unsafe_allow_html=True)
+st.markdown("<p class='sub-title'>Entorno Virtual de Simulación Bioquímica para Ciencias Biológicas</p>", unsafe_allow_html=True)
+
+st.sidebar.title("🛠️ Consola del Sistema")
+modo_acceso = st.sidebar.radio("Selecciona tu Terminal:", ["Portal del Estudiante", "Consola del Administrador"])
+
 if "auth" not in st.session_state: st.session_state["auth"] = False
-if "token_actual" not in st.session_state: st.session_state["token_actual"] = None
-if "puntos_acumulados" not in st.session_state: st.session_state["puntos_acumulados"] = 0
+if "token_actual" not in st.session_state: st.session_state["token_actual"] = ""
 if "vidas" not in st.session_state: st.session_state["vidas"] = 3
-if "racha" not in st.session_state: st.session_state["racha"] = 1
-if "estacion" not in st.session_state: st.session_state["estacion"] = "Día 1: Introducción"
-if "advertencia_ph" not in st.session_state: st.session_state["advertencia_ph"] = False
 if "errores_quiz" not in st.session_state: st.session_state["errores_quiz"] = 0
+if "advertencia_ph" not in st.session_state: st.session_state["advertencia_ph"] = False
+if "puntos_acumulados" not in st.session_state: st.session_state["puntos_acumulados"] = 0
+if "racha_consecutiva" not in st.session_state: st.session_state["racha_consecutiva"] = 0
+if "licencia_extendida" not in st.session_state: st.session_state["licencia_extendida"] = False
+if "memo_reveladas" not in st.session_state: st.session_state["memo_reveladas"] = []
+if "memo_resueltas" not in st.session_state: st.session_state["memo_resueltas"] = []
+if "memo_completado" not in st.session_state: st.session_state["memo_completado"] = False
+if "memo_tablero" not in st.session_state: st.session_state["memo_tablero"] = mezclar_memorama()
 
-def validar_token_db(token):
-    conn = sqlite3.connect("mainlab_data.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT modulo_maximo, puntos, vidas, racha FROM cupones WHERE token=? AND estado='Activo'", (token,))
-    res = cursor.fetchone()
-    conn.close()
-    return res
-
-def actualizar_conexion_db(token):
-    conn = sqlite3.connect("mainlab_data.db")
-    cursor = conn.cursor()
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
-    cursor.execute("UPDATE cupones SET ultima_conexion=? WHERE token=?", (ahora, token))
-    conn.commit()
-    conn.close()
-
-# ==========================================
-# 1. INYECCIÓN DE ESTILOS E ANIMACIÓN NEÓN
-# ==========================================
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+if modo_acceso == "Consola del Administrador":
+    st.markdown("<div class='lab-panel'>", unsafe_allow_html=True)
+    st.subheader("🔑 Autenticación de Seguridad del Administrador")
+    clave_admin = st.text_input("Introduce la Clave Maestra de Infraestructura:", type="password")
     
-    .stApp {
-        background: radial-gradient(circle at center, #0d1117 0%, #07090e 100%);
-        font-family: 'Inter', sans-serif;
-        color: #c9d1d9;
-    }
-    
-    /* Animación Radiactiva del Logo 'Lab' (Preservada) */
-    @keyframes pulso-radiactivo {
-        0% { text-shadow: 0 0 4px #00f2fe, 0 0 8px #00f2fe; color: #00f2fe; }
-        50% { text-shadow: 0 0 16px #4facfe, 0 0 25px #00f2fe, 0 0 30px #4facfe; color: #ffffff; }
-        100% { text-shadow: 0 0 4px #00f2fe, 0 0 8px #00f2fe; color: #00f2fe; }
-    }
-    .brand-main { font-family: 'Orbitron', sans-serif; font-size: 3.2rem; font-weight: 700; color: #ffffff; text-align: center; margin-bottom: 0px; }
-    .brand-lab { animation: pulso-radiactivo 3s infinite ease-in-out; }
-    
-    .sub-title { font-size: 1.15rem; color: #8b949e; text-align: center; margin-top: 5px; margin-bottom: 30px; font-weight: 300; }
-</style>
-""", unsafe_allow_html=True)
-
-# Encabezado con efecto Neón
-st.markdown("<h1 class='brand-main'>Main<span class='brand-lab'>Lab</span></h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-title'>Bioquímica aplicada. Ciencia interactiva. Sin límites.</p>", unsafe_allow_html=True)
-
-# ==========================================
-# 2. PESTAÑAS DE NAVEGACIÓN ORIGINALES
-# ==========================================
-pestaña = st.sidebar.radio("Seleccionar Entorno:", ["Portal del Estudiante", "Consola del Administrador"])
-
-# ------------------------------------------
-# ENTORNO: CONSOLA DEL ADMINISTRADOR (ORIGINAL)
-# ------------------------------------------
-if pestaña == "Consola del Administrador":
-    st.header("🔑 Autenticación de Seguridad del Administrador")
-    pass_admin = st.text_input("Contraseña de Infraestructura:", type="password")
-    
-    if pass_admin == "admin123": # Reemplaza por tu contraseña original si era diferente
-        st.success("Acceso exclusivo concedido al Administrador.")
+    if clave_admin == "UNAM2026":
+        st.success("Acceso verificado a los servicios centrales de SQLite.")
+        tab_generar, tab_control = st.tabs(["🆕 Generar Nuevos Tokens", "📊 Monitor de Alumnos en Tiempo Real"])
         
-        st.subheader("🛠️ Generación de Cupones de Acceso")
-        dias = st.number_input("Días de vigencia:", min_value=1, max_value=365, value=30)
-        
-        if st.button("Generar Nuevo Token"):
-            # Formato de token largo de la versión base original
-            nuevo_token = "MAINLAB-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-            fecha_c = datetime.now().strftime("%Y-%m-%d")
-            
-            conn = sqlite3.connect("mainlab_data.db")
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO cupones (token, fecha_creacion, vigencia_dias) VALUES (?, ?, ?)",
-                           (nuevo_token, fecha_c, dias))
-            conn.commit()
-            conn.close()
-            st.success(f"Token Creado Exitosamente: `{nuevo_token}`")
-            
-        st.subheader("📋 Matriz de Monitoreo de Actividad (Tablero Tipo Excel)")
-        conn = sqlite3.connect("mainlab_data.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT token, modulo_maximo, puntos, vidas, racha, ultima_conexion, vigencia_dias, fecha_creacion, estado FROM cupones")
-        filas = cursor.fetchall()
-        conn.close()
-        
-        if filas:
-            import pandas as pd
-            # Reconstrucción exacta de la matriz de datos tipo Excel original
-            df = pd.DataFrame(filas, columns=[
-                "Token / Cupón", "Módulo Máximo", "Puntos Acumulados", 
-                "Vidas Restantes", "Racha Actual", "Última Conexión", 
-                "Vigencia (Días)", "Fecha Creación", "Estado"
-            ])
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No hay registros de tokens en la base de datos actual.")
-            
-    elif pass_admin:
-        st.error("Credencial de infraestructura incorrecta.")
+        with tab_generar:
+            vigencia = st.number_input("Días de vigencia del token:", min_value=1, max_value=365, value=30)
+            if st.button("Emitir Cupón de Acceso"):
+                nuevo_tok = generar_token(vigencia)
+                st.code(f"TOKEN EMITIDO: {nuevo_tok}", language="text")
+                st.toast(f"Token {nuevo_tok} inyectado con éxito.")
+                
+        with tab_control:
+            datos_raw = listar_todos_los_tokens()
+            if datos_raw:
+                df = pd.DataFrame(datos_raw, columns=["Token", "Activo", "Días Restantes", "Puntos", "Vidas", "Módulo Máx"])
+                st.dataframe(df, use_container_width=True, hide_index=True)
+                
+                st.markdown("#### Operaciones Críticas sobre la Base de Datos")
+                col_tok_sel, col_btn_lib, col_btn_del = st.columns([2, 1, 1])
+                with col_tok_sel:
+                    token_seleccionado = st.selectbox("Selecciona un Token para Operar:", df["Token"].tolist())
+                with col_btn_lib:
+                    if st.button("🔓 Forzar Cierre", use_container_width=True):
+                        forzar_liberacion_sesion(token_seleccionado)
+                        st.success("Sesión liberada.")
+                        st.rerun()
+                with col_btn_del:
+                    if st.button("🚨 Revocar Licencia", use_container_width=True):
+                        revocar_eliminar_token(token_seleccionado)
+                        st.warning("Token destruido.")
+                        st.rerun()
+            else: st.info("Base de datos vacía.")
+    elif clave_admin != "": st.error("Clave incorrecta.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ------------------------------------------
-# ENTORNO: PORTAL DEL ESTUDIANTE (ORIGINAL)
-# ------------------------------------------
 else:
     if not st.session_state["auth"]:
-        st.header("🔒 Acceso a Estaciones de Trabajo")
-        input_token = st.text_input("Introduce tu Cupón de Acceso:", type="password").strip()
+        st.markdown("<div class='lab-panel'>", unsafe_allow_html=True)
+        st.subheader("🔒 Acceso a Estaciones de Trabajo")
+        token_input = st.text_input("Introduce tu Token de Suscripción Autorizado:", type="password")
         
-        if st.button("Autenticar e Ingresar"):
-            if input_token:
-                datos = validar_token_db(input_token)
-                if datos:
+        if st.button("Conectar e Inicializar Simuladores", use_container_width=True):
+            if token_input.strip():
+                es_valido, mensaje = validar_token(token_input)
+                if es_valido:
+                    datos = obtener_datos_usuario(token_input.strip().upper())
                     st.session_state["auth"] = True
-                    st.session_state["token_actual"] = input_token
-                    st.session_state["estacion"] = datos[0] if datos[0] != 'Ninguno' else "Día 1: Introducción"
-                    st.session_state["puntos_acumulados"] = datos[1]
-                    st.session_state["vidas"] = datos[2]
-                    st.session_state["racha"] = datos[3]
-                    actualizar_conexion_db(input_token)
-                    st.success("Acceso autorizado al laboratorio.")
+                    st.session_state['token_actual'] = token_input.strip().upper()
+                    st.session_state['puntos_acumulados'] = datos[0]
+                    st.session_state['vidas'] = datos[1]
+                    if datos[2] >= 2: st.session_state["memo_completado"] = True
                     st.rerun()
-                else:
-                    st.error("El cupón ingresado no es válido o ha expirado.")
-            else:
-                st.warning("Por favor, introduce un token.")
-                
+                else: st.error(f"Fallo de conexión: {mensaje}")
+            else: st.warning("Digita un token.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
     else:
-        st.subheader(f"🧬 Panel Estudiantil • Usuario: `{st.session_state['token_actual']}`")
+        with st.sidebar:
+            st.markdown(f"**Usuario:** `{st.session_state['token_actual']}`")
+            st.markdown(f"**Marcador:** `🪙 {st.session_state['puntos_acumulados']} PTS`")
+            st.markdown(f"**Estabilidad:** `💔 {st.session_state['vidas']} / 3`")
+            if st.button("🚪 Cerrar Sesión Segura", use_container_width=True):
+                liberar_token(st.session_state['token_actual'])
+                st.session_state.clear()
+                st.rerun()
         
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Puntos", f"{st.session_state['puntos_acumulados']} PTS")
-        col2.metric("Sistemas Vitales (Vidas)", f"{st.session_state['vidas']} / 3")
-        col3.metric("Racha Activa", f"{st.session_state['racha']}x")
-        
-        st.session_state["estacion"] = st.selectbox(
-            "Seleccionar Estación de Trabajo:",
-            ["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"],
-            index=["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"].index(st.session_state["estacion"]) if st.session_state["estacion"] in ["Día 1: Introducción", "Día 2: Biomoléculas", "Día 3: Termodinámica", "Día 4: Equilibrio Ácido-Base"] else 0
-        )
-        
-        # Carga del contenido de los módulos originales
-        estacion_actual = st.session_state["estacion"]
-        if "Día 1" in estacion_actual:
-            st.info("Módulo 1: Conceptos introductorios e instrumental analítico.")
-        elif "Día 2" in estacion_actual:
-            st.info("Módulo 2: Interacciones estereoquímicas macromoleculares.")
-        elif "Día 3" in estacion_actual:
-            st.info("Módulo 3: Entropía y bioenergética del enlace celular.")
-        elif "Día 4" in estacion_actual:
-            try:
-                from modulos.m1_dia4 import mostrar_dia4
+        if st.session_state['vidas'] <= 0:
+            st.error("🚨 COLAPSO METABÓLICO: Lisis celular detectada por acumulación de fallos.")
+            if st.button("Reiniciar Entorno Fisiológico"):
+                st.session_state['vidas'] = 3
+                st.rerun()
+        else:
+            st.markdown("<h2 style='color:#ffffff; margin-top:0;'>Unidad 1: Fundamentos de Química Biológica</h2>", unsafe_allow_html=True)
+            
+            estacion_actual = st.radio(
+                "Cronograma de Trabajo:",
+                options=[
+                    "📅 Estación: Día 1 (Fases y Modelos)",
+                    "📅 Estación: Día 2 (Estructura y Bioelementos)",
+                    "📅 Estación: Día 3 (Fusión e Interacciones)",
+                    "📅 Estación: Día 4 (Homeostasis y pH)"
+                ],
+                horizontal=True,
+                label_visibility="collapsed"
+            )
+            st.markdown("---")
+
+            if "Día 1" in estacion_actual:
+                mostrar_dia1()
+            elif "Día 2" in estacion_actual:
+                mostrar_dia2()
+            elif "Día 3" in estacion_actual:
+                mostrar_dia3()
+            else:
                 mostrar_dia4()
-            except Exception as e:
-                st.error(f"Error al cargar la estación: {e}")
-                
-        if st.button("Cerrar Sesión del Laboratorio", type="primary"):
-            st.session_state["auth"] = False
-            st.session_state["token_actual"] = None
-            st.rerun()
