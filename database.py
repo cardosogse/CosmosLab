@@ -1,131 +1,125 @@
 import sqlite3
-import uuid
+import datetime
+from datetime import timedelta
 
-DB_NAME = "mainlab_auth.db"
+DB_NAME = 'synapsis_auth.db'
 
 def inicializar_db():
-    """Crea la base de datos local y la tabla de control si no existen."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS tokens_acceso (
-                    token TEXT PRIMARY KEY,
-                    en_uso INTEGER DEFAULT 0,
-                    dias_restantes INTEGER DEFAULT 30,
-                    puntos INTEGER DEFAULT 0,
-                    vidas INTEGER DEFAULT 3,
-                    dia_completado INTEGER DEFAULT 0
-                )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS tokens_acceso
+                 (token TEXT PRIMARY KEY, 
+                  fecha_expiracion DATE, 
+                  en_uso BOOLEAN, 
+                  identificador_usuario TEXT,
+                  modulo_actual INTEGER DEFAULT 1,
+                  score_puntos INTEGER DEFAULT 0,
+                  memo_completado INTEGER DEFAULT 0)''')
+    
+    token_prueba = "SYNAPSIS-PRO-2026"
+    fecha_futura = datetime.date.today() + timedelta(days=30)
+    c.execute("INSERT OR IGNORE INTO tokens_acceso (token, fecha_expiracion, en_uso, identificador_usuario, modulo_actual, score_puntos, memo_completado) VALUES (?, ?, ?, ?, 1, 0, 0)", 
+              (token_prueba, fecha_futura, False, "Admin"))
     conn.commit()
     conn.close()
-
-# ========================================================
-# CONSOLA DE ADMINISTRACIÓN DE TOKENS (SISTEMA MAESTRO)
-# ========================================================
-
-def generar_token(dias=30):
-    """Genera un identificador alfanumérico único para un nuevo alumno."""
-    nuevo_token = str(uuid.uuid4()).split('-')[0].upper()
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("INSERT INTO tokens_acceso (token, dias_restantes) VALUES (?, ?)", (nuevo_token, dias))
-    conn.commit()
-    conn.close()
-    return nuevo_token
-
-def listar_todos_los_tokens():
-    """Recupera la totalidad de los registros de la base de datos para el panel de control."""
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT token, en_uso, dias_restantes, puntos, vidas, dia_completado FROM tokens_acceso")
-    filas = c.fetchall()
-    conn.close()
-    return filas
-
-def revocar_eliminar_token(token):
-    """Elimina permanentemente un token de la base de datos."""
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("DELETE FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
-    conn.commit()
-    conn.close()
-
-def forzar_liberacion_sesion(token):
-    """Resetea el estado de uso de un token si la sesión se quedó colgada en el servidor."""
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("UPDATE tokens_acceso SET en_uso = 0 WHERE token = ?", (token.strip().upper(),))
-    conn.commit()
-    conn.close()
-
-# ========================================================
-# AUTENTICACIÓN Y FLUJO DEL ESTUDIANTE
-# ========================================================
-
-def validar_token(token):
-    """Valida el token y bloquea accesos simultáneos en múltiples dispositivos."""
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT en_uso FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
-    row = c.fetchone()
-    if row:
-        if row[0] == 0:
-            c.execute("UPDATE tokens_acceso SET en_uso = 1 WHERE token = ?", (token.strip().upper(),))
-            conn.commit()
-            conn.close()
-            return True, "Acceso concedido"
-        else:
-            conn.close()
-            return False, "El token ya está activo en otro dispositivo"
-    conn.close()
-    return False, "Token inválido o inexistente"
-
-def liberar_token(token):
-    """Libera el token al cerrar la sesión de forma voluntaria."""
-    if token:
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
-        c.execute("UPDATE tokens_acceso SET en_uso = 0 WHERE token = ?", (token.strip().upper(),))
-        conn.commit()
-        conn.close()
 
 def obtener_datos_usuario(token):
-    """Recupera el estado exacto de puntos, vidas y avance diario del alumno."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("SELECT puntos, vidas, dia_completado FROM tokens_acceso WHERE token = ?", (token.strip().upper(),))
-    row = c.fetchone()
+    c.execute("SELECT score_puntos, memo_completado FROM tokens_acceso WHERE token = ?", (token,))
+    res = c.fetchone()
     conn.close()
-    return row if row else (0, 3, 0)
+    return res if res else (0, 0)
 
-# ========================================================
-# MOTOR DE PERSISTENCIA JUEGO / APRENDIZAJE
-# ========================================================
-
-def sincronizar_progreso_db(token, puntos_ganados, dia_completado):
-    """Guarda los puntos obtenidos y actualiza la bitácora de viaje."""
+def obtener_todos_los_tokens():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("""
-        UPDATE tokens_acceso 
-        SET puntos = puntos + ?, 
-            dia_completado = MAX(dia_completado, ?) 
-        WHERE token = ?
-    """, (puntos_ganados, dia_completado, token.strip().upper()))
+    c.execute("SELECT token, fecha_expiracion, en_uso, identificador_usuario, score_puntos, memo_completado FROM tokens_acceso")
+    res = c.fetchall()
+    conn.close()
+    return res
+
+def sincronizar_progreso_db(token, puntos, memo_comp):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE tokens_acceso SET score_puntos = ?, memo_completado = ? WHERE token = ?", (puntos, memo_comp, token))
     conn.commit()
     conn.close()
 
-def descontar_vida_db(token):
-    """Resta un punto de estabilidad celular al disco duro sin bajar de 0."""
+def actualizar_modulo_db(token, modulo):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("UPDATE tokens_acceso SET vidas = MAX(0, vidas - 1) WHERE token = ?", (token.strip().upper(),))
+    c.execute("UPDATE tokens_acceso SET modulo_actual = ? WHERE token = ?", (modulo, token))
     conn.commit()
     conn.close()
 
-def restaurar_vida_db(token):
-    """Suma un punto de estabilidad celular tras superar retos de rescate (Máximo 3)."""
+def otorgar_tiempo_extra_db(token, dias=7):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("UPDATE tokens_acceso SET vidas = MIN(3, vidas + 1) WHERE token = ?", (token.strip().upper(),))
+    c.execute("SELECT fecha_expiracion FROM tokens_acceso WHERE token = ?", (token,))
+    res = c.fetchone()
+    if res:
+        fecha_act = datetime.datetime.strptime(res[0], "%Y-%m-%d").date()
+        nueva_fecha = fecha_act + timedelta(days=dias)
+        c.execute("UPDATE tokens_acceso SET fecha_expiracion = ? WHERE token = ?", (nueva_fecha.strftime("%Y-%m-%d"), token))
+        conn.commit()
+    conn.close()
+
+def forzar_cancelacion_licencia(token):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    ayer = datetime.date.today() - timedelta(days=1)
+    c.execute("UPDATE tokens_acceso SET fecha_expiracion = ? WHERE token = ?", (ayer.strftime("%Y-%m-%d"), token))
     conn.commit()
     conn.close()
+
+def eliminar_registro_token(token):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("DELETE FROM tokens_acceso WHERE token = ?", (token,))
+    conn.commit()
+    conn.close()
+
+def validar_y_bloquear_token(token_ingresado):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT fecha_expiracion, en_uso FROM tokens_acceso WHERE token = ?", (token_ingresado,))
+    resultado = c.fetchone()
+    
+    if resultado:
+        fecha_exp = datetime.datetime.strptime(resultado[0], "%Y-%m-%d").date()
+        en_uso = resultado[1]
+        if datetime.date.today() > fecha_exp:
+            conn.close()
+            return False, "El token ha expirado o fue cancelado por el administrador."
+        if en_uso:
+            conn.close()
+            return False, "Acceso denegado: Token activo en otro dispositivo."
+        
+        c.execute("UPDATE tokens_acceso SET en_uso = 1 WHERE token = ?", (token_ingresado,))
+        conn.commit()
+        conn.close()
+        return True, "Acceso concedido."
+    conn.close()
+    return False, "Token inexistente o inválido."
+
+def liberar_token(token):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE tokens_acceso SET en_uso = 0 WHERE token = ?", (token,))
+    conn.commit()
+    conn.close()
+
+def registrar_nuevo_usuario(token, dias_duracion, identificador="Nuevo Estudiante"):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    exp = datetime.date.today() + timedelta(days=dias_duracion)
+    try:
+        c.execute("INSERT INTO tokens_acceso (token, fecha_expiracion, en_uso, identificador_usuario, modulo_actual, score_puntos, memo_completado) VALUES (?, ?, ?, ?, 1, 0, 0)", 
+                  (token.upper(), exp, False, identificador))
+        conn.commit()
+        mensaje = f"Token {token} registrado con éxito hasta {exp}"
+    except sqlite3.IntegrityError:
+        mensaje = f"Error: El token ya existe en el servidor."
+    conn.close()
+    return mensaje
