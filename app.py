@@ -1,3 +1,4 @@
+# === ARCHIVO COMPLETO: app.py ===
 import streamlit as st
 import pandas as pd
 
@@ -15,7 +16,7 @@ try:
     from modulos.modulo2 import mostrar_modulo2
 
 except Exception as e:
-    st.set_page_config(page_title="MainLab - Diagnóstico", layout=\"wide\", page_icon="🚨")
+    st.set_page_config(page_title="MainLab - Diagnóstico", layout="wide", page_icon="🚨")
     st.error("🚨 MONITOR DE CONTROL: ERROR DE COMPILACIÓN DETECTADO EN LOS MÓDULOS")
     st.markdown("---")
     st.markdown(f"**Tipo de Fallo detectado:** `{type(e).__name__}`")
@@ -171,7 +172,7 @@ else:
         c1, c2 = st.columns(2)
         with c1:
             u_id = st.text_input("Identificador / Matrícula del Alumno:", placeholder="JuanPerez_2026")
-            dias_val = st.number_value = st.slider("Días de vigencia del Token:", 1, 90, 30)
+            dias_val = st.slider("Días de vigencia del Token:", 1, 90, 30)
         with c2:
             st.write("")
             st.write("")
@@ -218,4 +219,3 @@ else:
     if st.sidebar.button("🚪 Salir de Consola", use_container_width=True):
         st.session_state.clear()
         st.rerun()
-        
