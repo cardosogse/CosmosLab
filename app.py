@@ -135,7 +135,7 @@ else:
             elif "Día 3" in estacion_actual:
                 mostrar_dia3()
             else:
-                mostrar_dia4()import streamlit as st
+                mostrar_dia4()
 import pandas as pd
 from database import (
     inicializar_db, validar_token, liberar_token, obtener_datos_usuario,
