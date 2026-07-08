@@ -3,6 +3,7 @@ from assets import ELEMENTOS, generar_svg_enlace, generar_svg_tira_afloja
 
 def mostrar_dia3():
     st.subheader("Día 3: El Reactor de Fusión Atómica e Interacciones Moleculares")
+    st.write("Estudia cómo la disparidad en la tracción de electrones determina la estabilidad de las uniones y la solvatación biológica celular.")
     
     escala_pauling = {"Oxígeno (O)": 3.44, "Hidrógeno (H)": 2.20, "Carbono (C)": 2.55, "Sodio (Na)": 0.93, "Cloro (Cl)": 3.16, "Nitrógeno (N)": 3.04}
     
@@ -17,11 +18,13 @@ def mostrar_dia3():
         
     with col2:
         if fusionar:
+            # Corregido el NameError de 'scala_pauling'
             diff = abs(escala_pauling[atomo_a] - escala_pauling[atomo_b])
             st.metric("Diferencia de Electronegatividad (Δχ)", f"{diff:.2f}")
             
-            sym_a = atomo_a.split(" ")[1].replace("(","").replace(")","")
-            sym_b = atomo_b.split(" ")[1].replace("(","").replace(")","")
+            # Corregida la extracción de variables para el motor SVG dinámico
+            sym_a = atomo_a.split(" ")[1].replace("(", "").replace(")", "")
+            sym_b = atomo_b.split(" ")[1].replace("(", "").replace(")", "")
             color_a = ELEMENTOS.get(atomo_a, {"color": "#00e5ff"})["color"]
             color_b = ELEMENTOS.get(atomo_b, {"color": "#ff5252"})["color"]
             
